@@ -1,0 +1,215 @@
+
+import React, { useState, useEffect, useCallback } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { UserInventory, Item } from "@/entities/all";
+import { motion } from "framer-motion";
+
+const rarityColors = {
+  common: "border-gray-400 bg-gray-50 text-gray-700",
+  uncommon: "border-green-400 bg-green-50 text-green-700",
+  rare: "border-blue-400 bg-blue-50 text-blue-700",
+  epic: "border-purple-400 bg-purple-50 text-purple-700",
+  legendary: "border-orange-400 bg-orange-50 text-orange-700"
+};
+
+const categoryEmojis = {
+  weapon: "⚔️",
+  helmet: "⛑️",
+  chest: "🛡️",
+  legs: "👖",
+  boots: "👢",
+  gloves: "🧤",
+  accessory: "💍"
+};
+
+export default function InventoryTab({ user, onUpdateUser }) {
+  const [inventory, setInventory] = useState([]);
+  const [items, setItems] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const loadInventory = useCallback(async () => {
+    try {
+      const [userInventory, allItems] = await Promise.all([
+        UserInventory.filter({ user_id: user.id }),
+        Item.list()
+      ]);
+      
+      setInventory(userInventory);
+      setItems(allItems);
+    } catch (error) {
+      console.error("Error loading inventory:", error);
+    }
+    setIsLoading(false);
+  }, [user.id]); // user.id is stable enough to be in deps, or user object itself if it changes less often than loadInventory is called.
+
+  useEffect(() => {
+    loadInventory();
+  }, [loadInventory]); // Depend on loadInventory to re-run when it changes (which is only when user.id changes)
+
+  const handleEquipItem = async (inventoryItem) => {
+    try {
+      const item = items.find(i => i.id === inventoryItem.item_id);
+      if (!item) return;
+
+      // Unequip any other item in the same category
+      const categoryInventory = inventory.filter(inv => {
+        const invItem = items.find(i => i.id === inv.item_id);
+        return invItem && invItem.category === item.category && inv.is_equipped;
+      });
+
+      // Unequip previous items in this category
+      for (const prevItem of categoryInventory) {
+        await UserInventory.update(prevItem.id, { is_equipped: false });
+      }
+
+      // Equip the new item
+      await UserInventory.update(inventoryItem.id, { is_equipped: true });
+
+      // Update user's equipped item field
+      const equipmentField = `equipped_${item.category}`;
+      await onUpdateUser({ [equipmentField]: inventoryItem.item_id });
+
+      // Reload inventory
+      loadInventory();
+    } catch (error) {
+      console.error("Error equipping item:", error);
+    }
+  };
+
+  const handleUnequipItem = async (inventoryItem) => {
+    try {
+      const item = items.find(i => i.id === inventoryItem.item_id);
+      if (!item) return;
+
+      await UserInventory.update(inventoryItem.id, { is_equipped: false });
+      
+      // Update user's equipped item field
+      const equipmentField = `equipped_${item.category}`;
+      await onUpdateUser({ [equipmentField]: null });
+
+      // Reload inventory
+      loadInventory();
+    } catch (error) {
+      console.error("Error unequipping item:", error);
+    }
+  };
+
+  const getInventoryByCategory = (category) => {
+    return inventory.filter(invItem => {
+      const item = items.find(i => i.id === invItem.item_id);
+      return item && item.category === category;
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 border-4 border-purple-200 border-t-purple-500 rounded-full animate-spin mx-auto"></div>
+          <p className="text-gray-600 font-medium">Loading inventory...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const categories = Object.keys(categoryEmojis);
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center">
+        <h3 className="text-2xl font-bold text-gray-900 mb-2">🎒 Equipment Inventory</h3>
+        <p className="text-gray-600">Manage your collected gear and equipment</p>
+      </div>
+
+      {inventory.length === 0 ? (
+        <Card className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-2xl">
+          <CardContent className="p-12 text-center">
+            <div className="text-6xl mb-4">📦</div>
+            <h4 className="text-xl font-bold text-gray-600 mb-2">Empty Inventory</h4>
+            <p className="text-gray-500">Complete daily goals to earn equipment!</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-8">
+          {categories.map(category => {
+            const categoryItems = getInventoryByCategory(category);
+            if (categoryItems.length === 0) return null;
+
+            return (
+              <div key={category}>
+                <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <span className="text-2xl">{categoryEmojis[category]}</span>
+                  {category.charAt(0).toUpperCase() + category.slice(1)}
+                  <Badge variant="outline" className="ml-2">
+                    {categoryItems.length}
+                  </Badge>
+                </h4>
+                
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {categoryItems.map((inventoryItem, index) => {
+                    const item = items.find(i => i.id === inventoryItem.item_id);
+                    if (!item) return null;
+
+                    return (
+                      <motion.div
+                        key={inventoryItem.id}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: index * 0.1 }}
+                      >
+                        <Card className={`${rarityColors[item.rarity]} border-2 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 ${
+                          inventoryItem.is_equipped ? 'ring-4 ring-purple-300' : ''
+                        }`}>
+                          <CardContent className="p-4 text-center">
+                            <div className="w-16 h-16 mx-auto mb-3 bg-white rounded-xl flex items-center justify-center shadow-md">
+                              {item.image_url ? (
+                                <img 
+                                  src={item.image_url} 
+                                  alt={item.name}
+                                  className="w-12 h-12 object-contain"
+                                />
+                              ) : (
+                                <span className="text-2xl">{categoryEmojis[item.category]}</span>
+                              )}
+                            </div>
+                            
+                            <h5 className="font-bold text-sm mb-1">{item.name}</h5>
+                            
+                            <Badge className={`${rarityColors[item.rarity]} text-xs mb-3 border`}>
+                              {item.rarity.toUpperCase()}
+                            </Badge>
+
+                            {inventoryItem.is_equipped ? (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleUnequipItem(inventoryItem)}
+                                className="w-full bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100 rounded-xl font-semibold"
+                              >
+                                ✅ Equipped
+                              </Button>
+                            ) : (
+                              <Button
+                                size="sm"
+                                onClick={() => handleEquipItem(inventoryItem)}
+                                className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white rounded-xl font-semibold shadow-lg"
+                              >
+                                Equip
+                              </Button>
+                            )}
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}

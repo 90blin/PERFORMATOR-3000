@@ -1,0 +1,138 @@
+{
+  "name": "Task",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "The task title"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description of the task"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "master",
+        "backlog",
+        "todo",
+        "in_progress",
+        "done",
+        "slain"
+      ],
+      "default": "todo",
+      "description": "Current status of the task"
+    },
+    "is_complete": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the task is marked as completed"
+    },
+    "color": {
+      "type": "string",
+      "enum": [
+        "gray",
+        "red",
+        "orange",
+        "yellow",
+        "green",
+        "blue",
+        "purple",
+        "pink"
+      ],
+      "default": "gray",
+      "description": "Color theme for master cards and their linked tasks"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Task tags for categorization"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the task is due"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "default": "medium",
+      "description": "Task priority level"
+    },
+    "estimated_pomodoros": {
+      "type": "number",
+      "default": 1,
+      "description": "Estimated number of pomodoro sessions to complete task"
+    },
+    "exp_value": {
+      "type": "number",
+      "default": 25,
+      "description": "Experience points awarded for completing this task"
+    },
+    "checklist_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "completed": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      },
+      "description": "Checklist items within the task"
+    },
+    "estimated_time": {
+      "type": "number",
+      "description": "Estimated time in minutes to complete"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the task was completed"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "URL of attached image thumbnail"
+    },
+    "completed_pomodoros": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of pomodoro sessions completed for this task"
+    },
+    "exp_awarded": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether XP has been awarded for this task"
+    },
+    "slain_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the task was moved to graveyard"
+    },
+    "master_card_id": {
+      "type": "string",
+      "description": "ID of the parent master card if this is a linked sub-task"
+    },
+    "linked_checklist_item_id": {
+      "type": "string",
+      "description": "ID of the checklist item this task is linked to"
+    }
+  },
+  "required": [
+    "title"
+  ]
+}

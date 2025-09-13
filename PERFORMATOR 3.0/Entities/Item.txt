@@ -1,0 +1,66 @@
+{
+  "name": "Item",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Item name"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "weapon",
+        "helmet",
+        "chest",
+        "legs",
+        "boots",
+        "gloves",
+        "accessory"
+      ],
+      "description": "Equipment slot category"
+    },
+    "rarity": {
+      "type": "string",
+      "enum": [
+        "common",
+        "uncommon",
+        "rare",
+        "epic",
+        "legendary"
+      ],
+      "description": "Item rarity level"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "URL of the item image"
+    },
+    "level_requirement": {
+      "type": "number",
+      "default": 1,
+      "description": "Minimum level required to use this item"
+    },
+    "stats_bonus": {
+      "type": "object",
+      "properties": {
+        "exp_multiplier": {
+          "type": "number",
+          "default": 0
+        },
+        "productivity_bonus": {
+          "type": "number",
+          "default": 0
+        }
+      },
+      "description": "Stat bonuses provided by this item"
+    }
+  },
+  "required": [
+    "name",
+    "category",
+    "rarity"
+  ]
+}
+
+
+
+

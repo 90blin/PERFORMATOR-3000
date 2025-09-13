@@ -1,0 +1,28 @@
+{
+  "name": "UserInventory",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Reference to user who owns this item"
+    },
+    "item_id": {
+      "type": "string",
+      "description": "Reference to the item"
+    },
+    "is_equipped": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this item is currently equipped"
+    },
+    "acquired_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the item was acquired"
+    }
+  },
+  "required": [
+    "user_id",
+    "item_id"
+  ]
+}
