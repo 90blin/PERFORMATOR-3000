@@ -1,0 +1,561 @@
+﻿:root{
+  --bg: #173447;         /* mais claro que antes */
+  --panel: #1f3b55;      /* sidebar levemente mais claro */
+  --surface: #1b1c1f;    /* preto acinzentado, fosco */
+  --muted: #9fb0c8;
+  --text: #e6f0fb;
+  --accent: #7c3aed;
+  --accent-2: #4f46e5;
+  --glass: rgba(255,255,255,0.02);
+  --shadow: 0 6px 18px rgba(0,0,0,0.55);
+  --radius: 12px;
+}
+
+/* global */
+html,body,#root {
+  height: 100%;
+  margin: 0;
+  background: linear-gradient(180deg, var(--bg) 0%, #1f3b55 100%);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+
+/* shell / layout */
+.app-shell { display:flex; min-height:100vh; }
+.app-main { flex:1; padding:20px; transition:margin-left .2s ease; background:transparent; }
+.app-main.expanded { margin-left:0; }
+
+/* sidebar */
+.sidebar {
+  position: relative;
+  z-index: 50; /* acima do resto */
+  width: 220px;
+  background: linear-gradient(180deg, rgba(31,59,85,0.98), rgba(20,48,75,0.95)); /* ligeira transparência */
+  color: var(--text);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-sizing: border-box;
+  border-right: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 18px 40px rgba(2,6,23,0.65), 0 6px 18px rgba(0,0,0,0.5);
+  overflow: visible; /* allow portrait to extend outside the padded area */
+  position: relative;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transform: translateZ(0); /* força camada de composição para melhor performance */
+  transition: box-shadow .18s ease, transform .12s ease;
+  overflow: hidden;       /* corta qualquer coisa que tente sair da sidebar */
+}
+.sidebar.collapsed { width:64px; align-items:center; padding:8px; }
+.sidebar .brand { font-weight:700; font-size:16px; color:var(--text); }
+.sidebar-top { padding: 0 12px 12px 12px; display:flex; flex-direction:column; gap:8px; }
+
+/* portrait wrapper: keep 1:1 outer ratio, bleed to sides/top */
+.portrait-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  aspect-ratio: 1 / 1;    /* moderna: força 1:1 */
+  overflow: hidden;
+}
+
+/* Fallback para navegadores sem suporte a aspect-ratio */
+.portrait-wrap::before {
+  content: "";
+  display: block;
+  padding-top: 100%; /* cria caixa 1:1 */
+}
+
+/* Conteúdo real sobrepõe o fallback e ocupa toda a área */
+.portrait {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 0; /* cantos pontudos conforme pedido */
+  overflow: hidden;
+}
+
+.portrait-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;   /* preenche mantendo crop central */
+  display: block;
+  aspect-ratio: 1 / 1;
+}
+
+/* Quando a sidebar estiver colapsada, usar tamanho fixo quadrado */
+.sidebar.collapsed .portrait-wrap {
+  width: 56px;
+  min-width: 56px;
+  max-width: 56px;
+  aspect-ratio: 1 / 1;
+}
+
+.sidebar.collapsed .portrait,
+.sidebar.collapsed .portrait-img {
+  width: 56px;
+  height: 56px;
+  aspect-ratio: 1 / 1;
+}
+
+/* Protege contra regras externas que alterem dimensões */
+.portrait, .portrait-img, .portrait-wrap {
+  max-height: none;
+  max-width: 100%;
+}
+
+/* nav */
+.sidebar-nav { display:flex; flex-direction:column; gap:6px; margin-top:8px; }
+.nav-item {
+  background: transparent; border:0; color:var(--muted); text-align:left;
+  padding:10px 12px; border-radius:8px; cursor:pointer; font-size:14px;
+}
+.nav-item:hover { color:var(--text); background: rgba(124,58,237,0.08); }
+
+/* kanban header / controls */
+.kanban-header h1 { margin:0 0 10px 0; font-size:14px; color:var(--text); }
+.kanban-controls { margin-bottom:12px; }
+.kanban-add { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.kanban-add input, .kanban-add select {
+  padding:8px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.04);
+  background: rgba(255, 0, 0, 0.02); color: var(--text);
+}
+.kanban-add input::placeholder { color: rgba(255,255,255,0.35); }
+.kanban-add button {
+  padding:8px 12px; border-radius:8px; border:0; background: linear-gradient(180deg,var(--accent),var(--accent-2));
+  color:white; cursor:pointer;
+}
+
+/* board & columns */
+.kanban-board {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+.kanban-column {
+  flex: 1 1 0;
+  min-width: 160px;           /* mais grossa */
+  max-width: 220px;           /* limite máximo */
+  border-radius: 14px; /* borda arredondada */
+  background: var(--surface);
+  border: 1px solid rgba(255,255,255,0.06); /* contraste aumentado */
+  box-shadow: 0 6px 22px rgba(0,0,0,0.55);
+  padding: 12px;
+}
+
+/* cards */
+.kanban-list { display:flex; flex-direction:column; gap:8px; min-height:40px; }
+.kanban-card {
+  display:flex; justify-content:space-between; align-items:flex-start; gap:8px;
+  padding:12px; border-radius:10px; background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.04);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  cursor: pointer; transition: transform .08s ease, box-shadow .12s ease;
+  color: var(--text);
+}
+.kanban-card:hover { transform: translateY(-4px); box-shadow: 0 18px 40px rgba(2,6,23,0.5); }
+.kanban-card-body strong { display:block; margin-bottom:6px; color:var(--text); }
+.kanban-desc { margin:0; font-size:13px; color:var(--muted); }
+.kanban-card-actions button { background:transparent; border:0; color:var(--muted); font-size:18px; cursor:pointer; }
+
+/* modal (dark) */
+.modal-overlay { position:fixed; inset:0; background: rgba(2,6,12,0.6); display:grid; place-items:center; z-index:60; padding:20px; }
+
+/* Larger modal and header layout */
+.modal-card {
+  width: 820px;
+  max-width: calc(100% - 40px);
+  height: 560px;
+  display: grid;
+  grid-template-rows: auto 1fr; /* header + body */
+  background: linear-gradient(180deg, #071226, #091827);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 0; /* we'll manage inner paddings */
+  border: 1px solid rgba(255,255,255,0.04);
+}
+
+/* header area */
+.modal-header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.02);
+}
+.modal-title {
+  flex: 1;
+  font-size: 18px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.03);
+  background: rgba(255,255,255,0.02);
+  color: var(--text);
+}
+
+/* body layout: left reserved for description, right for controls */
+.modal-body {
+  display: grid;
+  grid-template-columns: 44% 56%;
+  gap: 12px;
+  padding: 12px;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* left description panel: lighter and touches left + bottom edges of modal-body */
+.modal-left {
+  padding: 0; /* inner desc panel handles padding */
+  position: relative;
+  height: 100%;
+}
+.desc-panel {
+  background: rgba(255,255,255,0.02); /* lighter */
+  height: 100%;
+  padding: 12px;
+  box-sizing: border-box;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.03);
+  display: flex;
+  flex-direction: column;
+}
+.desc-textarea {
+  flex: 1;
+  resize: none;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.03);
+  background: transparent;
+  color: var(--text);
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+/* right column and slim controls */
+.modal-right { display:flex; flex-direction:column; gap:10px; height:100%; box-sizing:border-box; }
+
+.modal-section.slim { padding: 2px 0; }
+.modal-label { font-weight:600; font-size:13px; color:var(--muted); margin-bottom:6px; }
+
+/* existing-tags area */
+.existing-tags { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:6px; }
+.tag-chip {
+  display:inline-flex;
+  gap:8px;
+  align-items:center;
+  padding:6px 8px;
+  border-radius:999px;
+  color: white;
+  font-size:12px;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.tag-chip .tag-remove { background: transparent; border: 0; color: rgba(255,255,255,0.8); cursor:pointer; padding:0 4px; }
+
+/* tag controls: dropdown + create row (compact) */
+.tag-controls select,
+.tag-input,
+.tag-color,
+.tag-add {
+  height: 34px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.03);
+  background: rgba(255,255,255,0.02);
+  color: var(--text);
+  font-size: 13px;
+}
+.tag-create-row { display:flex; gap:8px; margin-top:6px; width:100%; }
+.tag-input { flex:1; }
+.tag-color { width: 44px; height: 34px; padding: 0; }
+
+/* tag presets row */
+.tag-presets {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.tag-preset-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.04);
+  cursor: pointer;
+  padding: 0;
+}
+
+/* checklist slim rows */
+.checklist .checklist-row.slim { display:flex; gap:8px; align-items:center; }
+.checklist-text.slim {
+  flex: 1;
+  height: 34px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.03);
+  background: rgba(255,255,255,0.02);
+  color: var(--text);
+}
+.checklist-add.slim, .checklist-remove { background: transparent; border: 0; color: var(--accent); cursor: pointer; }
+
+/* make modal responsive */
+@media (max-width: 920px) {
+  .modal-card { width: calc(100% - 40px); height: auto; grid-template-rows: auto auto; }
+  .modal-body { grid-template-columns: 1fr; }
+  .modal-left { order: 1; }
+  .modal-right { order: 2; }
+}
+
+/* sidebar icon grid de 5 colunas */
+.icon-grid {
+  width: 100%;                    /* ocupa só a largura da sidebar */
+  max-width: 100%;
+  box-sizing: border-box;
+  padding-inline: 12px;           /* mantém o padding, sem extravasar */
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr)); /* 5 colunas que cabem */
+  gap: 12px;
+  justify-items: center;
+  align-items: center;
+}
+
+.icon-btn {
+  width: 44px;              /* tamanho confortável para ícones desenhados */
+  height: 44px;
+  display: inline-grid;
+  place-items: center;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  color: var(--text);
+  transition: color .12s ease, background .12s ease, transform .08s ease;
+  cursor: pointer;
+  padding: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* destaque no hover para melhor legibilidade */
+.icon-btn:hover {
+  background: rgba(255,255,255,0.04);
+  transform: translateY(-3px);
+}
+
+/* garantir SVGs grandes o suficiente e usando currentColor */
+.icon-svg svg {
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
+}
+
+/* comportamento quando a sidebar está colapsada */
+.sidebar.collapsed .icon-grid {
+  padding-inline: 8px;
+  gap: 10px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+.sidebar.collapsed .icon-btn { width: 40px; height: 40px; }
+
+/* Garantir que os ícones da sidebar estejam visíveis */
+.sidebar {
+  z-index: 50; /* acima do board */
+  color: var(--text);
+}
+
+/* Grid visível e sem overflow */
+.icon-grid {
+  opacity: 1 !important;
+  visibility: visible !important;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  z-index: 51;
+}
+
+/* Botões de ícone: cor forte, opacidade plena, sem filtros que escondam */
+.icon-btn {
+  color: var(--text) !important;
+  opacity: 1 !important;
+  background: transparent;
+  filter: none !important;
+  border: none;
+  box-shadow: none;
+  display: inline-grid;
+  place-items: center;
+}
+
+/* Força o SVG a usar currentColor e a caber na célula */
+.icon-svg svg,
+.icon-btn svg {
+  fill: currentColor !important;
+  stroke: none;
+  width: 22px;
+  height: 22px;
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
+}
+
+/* Quando colapsada, manter visibilidade e centralização */
+.sidebar.collapsed .icon-grid,
+.sidebar.collapsed .icon-btn {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Aumenta contraste no hover para ficar claramente visível */
+.icon-btn:hover {
+  background: rgba(255,255,255,0.06);
+  color: #ffffff;
+}
+
+/* Protege contra clipping indesejado */
+.sidebar { overflow: hidden; }
+
+/* make profile picture touch the sidebar edges and portrait corners pointed */
+.sidebar {
+  --sidebar-pad: 12px; /* adjust if your sidebar uses different padding */
+  box-sizing: border-box;
+}
+
+.portrait-wrap {
+  box-sizing: border-box;
+  padding: 0;
+  /* expand to reach sidebar edges horizontally using sidebar padding variable (fallback 12px) */
+  width: calc(100% + (var(--sidebar-pad, 12px) * 2));
+  margin-left: calc(-1 * var(--sidebar-pad, 12px));
+  margin-right: calc(-1 * var(--sidebar-pad, 12px));
+  margin-top: 0;                 /* touch the top edge */
+  margin-bottom: 12px;          /* keep a gap at the bottom (exception) */
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ensure inner portrait fills the area exactly */
+.portrait {
+  position: absolute;
+  inset: 0;                     /* top/left/right/bottom = 0 so top + sides touch */
+  width: 100%;
+  height: 100%;
+  border-radius: 0;             /* sharp corners as requested */
+  overflow: hidden;
+}
+
+/* collapsed sidebar: keep it squared and also flush left/right/top */
+.sidebar.collapsed .portrait-wrap {
+  width: calc(56px + (var(--sidebar-pad, 12px) * 2));
+  margin-left: calc(-1 * var(--sidebar-pad, 12px));
+  margin-right: calc(-1 * var(--sidebar-pad, 12px));
+  margin-top: 0;
+  margin-bottom: 8px;
+  aspect-ratio: 1 / 1;
+}
+.sidebar.collapsed .portrait,
+.sidebar.collapsed .portrait-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Garantir que a foto de perfil seja sempre quadrada (1:1) */
+/* Uso de aspect-ratio + fallback com padding-top para máxima compatibilidade */
+.portrait-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  aspect-ratio: 1 / 1;    /* moderna: força 1:1 */
+  overflow: hidden;
+}
+
+/* Fallback para navegadores sem suporte a aspect-ratio */
+.portrait-wrap::before {
+  content: "";
+  display: block;
+  padding-top: 100%; /* cria caixa 1:1 */
+}
+
+/* Conteúdo real sobrepõe o fallback e ocupa toda a área */
+.portrait {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 0; /* cantos pontudos conforme pedido */
+  overflow: hidden;
+}
+
+.portrait-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;   /* preenche mantendo crop central */
+  display: block;
+  aspect-ratio: 1 / 1;
+}
+
+/* Quando a sidebar estiver colapsada, usar tamanho fixo quadrado */
+.sidebar.collapsed .portrait-wrap {
+  width: 56px;
+  min-width: 56px;
+  max-width: 56px;
+  aspect-ratio: 1 / 1;
+}
+
+.sidebar.collapsed .portrait,
+.sidebar.collapsed .portrait-img {
+  width: 56px;
+  height: 56px;
+  aspect-ratio: 1 / 1;
+}
+
+/* Protege contra regras externas que alterem dimensões */
+.portrait, .portrait-img, .portrait-wrap {
+  max-height: none;
+  max-width: 100%;
+}
+
+/* Sidebar gear inline menu (compact like pomodoro tray) */
+.sidebar-gear { position: relative; display: block; margin: 8px 0; }
+.gear-btn { width:44px; height:44px; display:grid; place-items:center; border-radius:8px; background:transparent; border:none; color:var(--text); cursor:pointer; }
+.gear-menu {
+  margin-top:8px;
+  padding:10px;
+  width:220px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border: 1px solid rgba(255,255,255,0.04);
+  box-shadow: 0 10px 30px rgba(2,6,23,0.6);
+  border-radius:10px;
+  z-index:80;
+}
+.gear-row { display:flex; gap:8px; align-items:center; margin-bottom:8px; }
+.gear-menu .btn { padding:6px 8px; border-radius:8px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.04); color:var(--text); cursor:pointer; }
+.gear-menu .btn.destructive { background: rgba(220,40,40,0.06); border-color: rgba(220,40,40,0.12); }
+.bg-preview { margin-top:8px; border-radius:6px; overflow:hidden; border:1px solid rgba(255,255,255,0.03); }
+.bg-preview img { width:100%; height:80px; object-fit:cover; display:block; }
+.gear-note { font-size:11px; color:var(--muted); margin-top:8px; }
+
+/* ensure custom background applies to main area only (keeps sidebar/columns intact) */
+body.has-custom-bg .app-main {
+  background-image: var(--custom-bg), var(--board-default);
+  background-size: cover, auto;
+  background-repeat: no-repeat, no-repeat;
+  background-position: center, center;
+}
+
+
+
+
+
+
+
+
